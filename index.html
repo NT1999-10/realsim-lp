@@ -1,0 +1,551 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>現実派 — 不動産投資の「現実」だけを計算するシミュレーター</title>
+<meta name="description" content="金利上昇・家賃下落・空室・原状回復・設備交換・税・売却出口まで織り込んだ不動産投資シミュレーター。楽観シミュレーションが見落とす金額を可視化します。">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Shippori+Mincho:wght@600;700;800&family=Zen+Kaku+Gothic+New:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --paper:#EEF1F4; --card:#FFFFFF; --ink:#16222E; --sub:#5B6B7A;
+  --line:#D7DDE3; --navy:#1F3A52; --red:#B3402E; --nibi:#7FA6B8;
+  --green:#2E7D6E; --warn:#8A5A12; --warnbg:#FBF3E6;
+  --serif:"Shippori Mincho",serif;
+  --sans:"Zen Kaku Gothic New","Hiragino Kaku Gothic ProN",sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{font-family:var(--sans);background:var(--paper);color:var(--ink);line-height:1.8;font-size:15px}
+img,svg{max-width:100%}
+a{color:var(--navy)}
+.wrap{max-width:1060px;margin:0 auto;padding:0 20px}
+.num{font-variant-numeric:tabular-nums}
+
+/* header */
+header{position:sticky;top:0;z-index:50;background:rgba(238,241,244,.92);backdrop-filter:blur(8px);border-bottom:1px solid var(--line)}
+.hd{display:flex;align-items:center;justify-content:space-between;height:60px}
+.logo{font-family:var(--serif);font-weight:800;font-size:21px;letter-spacing:.04em;color:var(--navy);text-decoration:none}
+.logo b{color:var(--red)}
+nav.menu{display:flex;gap:22px;font-size:13px}
+nav.menu a{text-decoration:none;color:var(--ink)}
+nav.menu a:hover{color:var(--red)}
+.btn{display:inline-block;border:none;cursor:pointer;text-decoration:none;text-align:center;
+  font-family:var(--sans);font-weight:700;border-radius:8px;transition:transform .15s,box-shadow .15s}
+.btn:active{transform:translateY(1px)}
+.btn-r{background:var(--red);color:#fff;padding:10px 22px;font-size:14px;box-shadow:0 3px 0 #8C2F21}
+.btn-n{background:var(--navy);color:#fff;padding:10px 22px;font-size:14px;box-shadow:0 3px 0 #142838}
+.btn-o{background:transparent;color:var(--navy);border:1.5px solid var(--navy);padding:9px 20px;font-size:14px}
+.hd .btn-r{padding:8px 16px;font-size:13px;box-shadow:none}
+@media(max-width:760px){nav.menu{display:none}}
+
+/* hero */
+.hero{position:relative;padding:64px 0 56px;overflow:hidden}
+.hero .wrap{display:grid;grid-template-columns:34px 1fr 1fr;gap:28px;align-items:center}
+.tate{writing-mode:vertical-rl;font-family:var(--serif);font-weight:700;font-size:17px;
+  letter-spacing:.34em;color:var(--red);border-left:1px solid var(--red);padding-left:12px;height:fit-content}
+h1{font-family:var(--serif);font-weight:800;font-size:clamp(30px,4.6vw,46px);line-height:1.45;letter-spacing:.02em}
+h1 .x{color:var(--red)}
+.lead{margin-top:18px;color:var(--sub);font-size:15px;max-width:30em}
+.hero-cta{margin-top:26px;display:flex;gap:12px;flex-wrap:wrap}
+.hero-note{margin-top:12px;font-size:12px;color:var(--sub)}
+.chart-card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:18px 14px 8px;box-shadow:0 10px 30px rgba(22,34,46,.08)}
+.chart-card figcaption{font-size:12px;color:var(--sub);text-align:center;padding:6px 0 8px}
+.gap-label{font-family:var(--serif);font-weight:700}
+@media(max-width:880px){
+  .hero .wrap{grid-template-columns:1fr}
+  .tate{writing-mode:horizontal-tb;border-left:none;border-bottom:1px solid var(--red);
+    padding:0 0 6px;letter-spacing:.2em;font-size:14px;width:fit-content}
+}
+
+/* line draw animation */
+.draw{stroke-dasharray:1200;stroke-dashoffset:1200;animation:draw 2.4s ease-out forwards}
+.draw.d2{animation-delay:.5s}
+@keyframes draw{to{stroke-dashoffset:0}}
+.fadein{opacity:0;animation:fin .8s ease-out 2.6s forwards}
+@keyframes fin{to{opacity:1}}
+@media(prefers-reduced-motion:reduce){
+  .draw,.draw.d2{animation:none;stroke-dashoffset:0}
+  .fadein{animation:none;opacity:1}
+  .rv{opacity:1 !important;transform:none !important}
+}
+
+/* sections */
+section{padding:64px 0}
+.eyebrow{font-size:12px;font-weight:700;letter-spacing:.22em;color:var(--red);margin-bottom:10px}
+h2{font-family:var(--serif);font-weight:700;font-size:clamp(23px,3.2vw,30px);line-height:1.5;margin-bottom:14px}
+.sec-lead{color:var(--sub);max-width:40em;margin-bottom:34px}
+.rv{opacity:0;transform:translateY(14px);transition:opacity .6s ease,transform .6s ease}
+.rv.in{opacity:1;transform:none}
+
+/* diagnosis */
+#shindan{background:var(--navy);color:#EAF0F5}
+#shindan .eyebrow{color:var(--nibi)}
+#shindan h2{color:#fff}
+#shindan .sec-lead{color:#B9C7D2}
+.diag-grid{display:grid;grid-template-columns:1fr 1.2fr;gap:22px;align-items:start}
+@media(max-width:820px){.diag-grid{grid-template-columns:1fr}}
+.diag-form{background:#fff;color:var(--ink);border-radius:12px;padding:22px}
+.diag-form label{display:block;font-size:12px;color:var(--sub);margin:14px 0 4px}
+.diag-form label:first-of-type{margin-top:0}
+.in-row{display:flex;align-items:center;gap:8px}
+.in-row input{flex:1;font-family:var(--sans);font-size:17px;padding:10px 12px;border:1px solid var(--line);
+  border-radius:8px;background:#FBFCFD;color:var(--ink);font-variant-numeric:tabular-nums;width:100%}
+.in-row span{font-size:12px;color:var(--sub);white-space:nowrap}
+.diag-form .btn{width:100%;margin-top:20px;padding:13px;font-size:15px}
+.diag-form .asm{font-size:11px;color:var(--sub);margin-top:12px;line-height:1.7}
+.diag-result{background:#fff;color:var(--ink);border-radius:12px;padding:22px;min-height:280px}
+.lights{display:flex;gap:14px;align-items:center;margin-bottom:14px}
+.light{width:34px;height:34px;border-radius:50%;background:#E3E8EC;border:1px solid var(--line);transition:all .3s}
+.light.on-g{background:var(--green);box-shadow:0 0 0 5px rgba(46,125,110,.18)}
+.light.on-y{background:#D99A2B;box-shadow:0 0 0 5px rgba(217,154,43,.18)}
+.light.on-r{background:var(--red);box-shadow:0 0 0 5px rgba(179,64,46,.18)}
+.verdict{font-family:var(--serif);font-weight:800;font-size:24px}
+.diag-kpis{display:flex;gap:18px;flex-wrap:wrap;margin:12px 0;font-size:13px}
+.diag-kpis b{font-size:17px}
+.diag-msg{font-size:13.5px;line-height:1.9}
+.diag-flags{margin-top:10px;font-size:12.5px;line-height:1.9}
+.diag-flags .f-r{color:var(--red)}
+.diag-flags .f-y{color:var(--warn)}
+.diag-more{margin-top:16px;padding-top:14px;border-top:1px dashed var(--line);font-size:12px;color:var(--sub)}
+.diag-empty{color:var(--sub);font-size:13.5px;padding:30px 6px;text-align:center}
+
+/* compare table */
+.cmp{width:100%;border-collapse:collapse;background:var(--card);border:1px solid var(--line);border-radius:12px;overflow:hidden;font-size:13.5px}
+.cmp th,.cmp td{padding:13px 16px;border-bottom:1px solid var(--line);text-align:center}
+.cmp th{font-family:var(--serif);font-size:14px}
+.cmp td:first-child,.cmp th:first-child{text-align:left}
+.cmp thead th{background:#F6F8FA}
+.cmp .ok{color:var(--green);font-weight:700}
+.cmp .ng{color:#B9C2CA}
+.cmp .hl{background:rgba(179,64,46,.045)}
+.cmp tr:last-child td{border-bottom:none}
+
+/* features */
+.feat-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+@media(max-width:880px){.feat-grid{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:560px){.feat-grid{grid-template-columns:1fr}}
+.feat{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:20px;border-top:3px solid var(--navy)}
+.feat.red{border-top-color:var(--red)}
+.feat h3{font-family:var(--serif);font-size:16px;margin-bottom:8px}
+.feat p{font-size:13px;color:var(--sub);line-height:1.8}
+.feat .tag{display:inline-block;font-size:10.5px;font-weight:700;color:var(--red);
+  border:1px solid var(--red);border-radius:10px;padding:1px 9px;margin-bottom:10px;letter-spacing:.08em}
+
+/* audience */
+.aud{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+@media(max-width:760px){.aud{grid-template-columns:1fr}}
+.aud-card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:26px}
+.aud-card h3{font-family:var(--serif);font-size:19px;margin-bottom:6px}
+.aud-card .who{font-size:12px;font-weight:700;letter-spacing:.18em;color:var(--nibi);margin-bottom:12px}
+.aud-card ul{list-style:none;font-size:13.5px}
+.aud-card li{padding:7px 0 7px 22px;position:relative;border-bottom:1px dashed var(--line)}
+.aud-card li:last-child{border-bottom:none}
+.aud-card li::before{content:"▸";position:absolute;left:2px;color:var(--red)}
+
+/* pricing */
+.price-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;align-items:stretch}
+@media(max-width:820px){.price-grid{grid-template-columns:1fr}}
+.plan{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:26px;display:flex;flex-direction:column}
+.plan.featured{border:2px solid var(--red);position:relative}
+.plan.featured::before{content:"おすすめ";position:absolute;top:-12px;left:20px;background:var(--red);
+  color:#fff;font-size:11px;font-weight:700;padding:2px 12px;border-radius:10px;letter-spacing:.1em}
+.plan h3{font-family:var(--serif);font-size:18px}
+.plan .pr{font-family:var(--serif);font-weight:800;font-size:32px;margin:10px 0 2px}
+.plan .pr small{font-size:13px;font-weight:500;color:var(--sub)}
+.plan .for{font-size:12px;color:var(--sub);margin-bottom:14px}
+.plan ul{list-style:none;font-size:13px;flex:1}
+.plan li{padding:6px 0 6px 20px;position:relative}
+.plan li::before{content:"✓";position:absolute;left:0;color:var(--green);font-weight:700}
+.plan li.no{color:#A9B3BC}
+.plan li.no::before{content:"—";color:#C7CED4}
+.plan .btn{margin-top:18px}
+.price-note{font-size:11.5px;color:var(--sub);margin-top:14px}
+
+/* faq */
+.faq details{background:var(--card);border:1px solid var(--line);border-radius:10px;margin-bottom:10px;overflow:hidden}
+.faq summary{cursor:pointer;padding:16px 18px;font-weight:700;font-size:14px;list-style:none;position:relative;padding-right:40px}
+.faq summary::after{content:"+";position:absolute;right:18px;top:50%;transform:translateY(-50%);
+  font-size:20px;color:var(--red);font-weight:400}
+.faq details[open] summary::after{content:"−"}
+.faq .a{padding:0 18px 16px;font-size:13.5px;color:var(--sub);line-height:1.9}
+
+/* cta band */
+#join{background:var(--ink);color:#EAF0F5;text-align:center}
+#join h2{color:#fff}
+#join .tate-h{font-family:var(--serif);color:var(--nibi);letter-spacing:.3em;font-size:13px;margin-bottom:14px}
+.join-form{display:flex;gap:10px;justify-content:center;margin-top:26px;flex-wrap:wrap}
+.join-form input{font-family:var(--sans);font-size:15px;padding:12px 16px;border-radius:8px;border:none;width:min(340px,100%)}
+.join-msg{font-size:12.5px;margin-top:12px;color:var(--nibi);min-height:1.5em}
+
+/* footer */
+footer{border-top:1px solid var(--line);padding:36px 0;font-size:11.5px;color:var(--sub)}
+footer .links{display:flex;gap:18px;margin-bottom:14px;flex-wrap:wrap}
+footer .links a{color:var(--sub)}
+footer .disc{background:var(--warnbg);border:1px solid #E8D9BC;color:var(--warn);
+  border-radius:10px;padding:14px 16px;line-height:1.9;margin-bottom:16px}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="wrap hd">
+    <a class="logo" href="#">現実<b>派</b><span style="font-size:11px;font-weight:500;color:var(--sub);margin-left:8px;font-family:var(--sans)">不動産収支シミュレーター</span></a>
+    <nav class="menu">
+      <a href="#shindan">30秒診断</a>
+      <a href="#chigai">楽観シミュとの違い</a>
+      <a href="#kinou">機能</a>
+      <a href="#ryokin">料金</a>
+      <a href="#faq">FAQ</a>
+    </nav>
+    <a class="btn btn-r" href="#shindan">無料で診断する</a>
+  </div>
+</header>
+
+<!-- hero -->
+<div class="hero">
+  <div class="wrap">
+    <div class="tate">悲観こそ、事業計画の友。</div>
+    <div>
+      <h1>楽観の<br>シミュレーションは、<br>あなたを<span class="x">救わない</span>。</h1>
+      <p class="lead">金利上昇、家賃下落、空室、原状回復、設備交換、税、売却出口——
+      ポータルサイトの満室・金利固定シミュレーションが見落とすコストを全部織り込んで、
+      35年分の「現実」を1分で計算します。</p>
+      <div class="hero-cta">
+        <a class="btn btn-r" href="#shindan">30秒診断を試す(無料)</a>
+        <a class="btn btn-o" href="#kinou">機能を見る</a>
+      </div>
+      <p class="hero-note">登録不要・利用無料。業者の提案書の数字を入れるだけで危険判定できます。</p>
+    </div>
+    <figure class="chart-card">
+      <svg viewBox="0 0 440 280" role="img" aria-label="楽観シナリオと現実シナリオの累積キャッシュフローが年々乖離していくグラフ">
+        <line x1="40" y1="140" x2="420" y2="140" stroke="#16222E" stroke-width="1"/>
+        <line x1="40" y1="20"  x2="40"  y2="252" stroke="#D7DDE3" stroke-width="1"/>
+        <text x="36" y="146" font-size="10" fill="#5B6B7A" text-anchor="end">0</text>
+        <text x="230" y="268" font-size="10" fill="#5B6B7A" text-anchor="middle">保有年数 →</text>
+        <!-- 楽観 -->
+        <path class="draw" d="M40,140 C140,118 280,84 420,40" fill="none"
+              stroke="#7FA6B8" stroke-width="2.5" stroke-dasharray="1200" stroke-linecap="round" style="stroke-dasharray:6 5,1200"/>
+        <path class="draw" d="M40,140 C140,118 280,84 420,40" fill="none"
+              stroke="#7FA6B8" stroke-width="2.5" stroke-linecap="round" opacity=".35"/>
+        <!-- 現実 -->
+        <path class="draw d2" d="M40,140 C120,142 200,150 280,176 C340,196 390,216 420,228" fill="none"
+              stroke="#B3402E" stroke-width="3" stroke-linecap="round"/>
+        <!-- gap -->
+        <g class="fadein">
+          <line x1="420" y1="44" x2="420" y2="224" stroke="#B3402E" stroke-width="1" stroke-dasharray="3 3"/>
+          <text x="412" y="36" font-size="12" fill="#7FA6B8" text-anchor="end">楽観(ポータル型)</text>
+          <text x="412" y="246" font-size="12" fill="#B3402E" text-anchor="end" font-weight="700">現実</text>
+          <text x="404" y="140" font-size="13" fill="#B3402E" text-anchor="end" class="gap-label">この差、数百万円。</text>
+        </g>
+      </svg>
+      <figcaption>累積キャッシュフローのイメージ。同じ物件でも、前提次第で結末は変わる。</figcaption>
+    </figure>
+  </div>
+</div>
+
+<!-- 30秒診断 -->
+<section id="shindan">
+  <div class="wrap">
+    <p class="eyebrow rv">FREE CHECK</p>
+    <h2 class="rv">30秒診断 — その物件、毎月いくら残りますか。</h2>
+    <p class="sec-lead rv">3つの数字を入れるだけで、保守的な前提(空室・経費込み)での月次収支と返済余裕を即判定します。
+    業者の提案書を片手にどうぞ。</p>
+    <div class="diag-grid rv">
+      <div class="diag-form">
+        <label for="d-price">物件価格</label>
+        <div class="in-row"><input id="d-price" type="number" value="3200" step="50" min="100"><span>万円</span></div>
+        <label for="d-rent">想定月額家賃</label>
+        <div class="in-row"><input id="d-rent" type="number" value="95000" step="1000" min="10000"><span>円</span></div>
+        <label for="d-down">自己資金(頭金)</label>
+        <div class="in-row"><input id="d-down" type="number" value="10" step="50" min="0"><span>万円</span></div>
+        <button class="btn btn-r" id="d-run">診断する</button>
+        <p class="asm">前提: 金利1.8%・35年元利均等、管理委託5%、建物管理費月1.2万円、税・保険・修繕年11.5万円、稼働率96%。
+        フル版ではこれら30以上の前提をすべて自分で設定できます。</p>
+      </div>
+      <div class="diag-result" id="d-result">
+        <div class="diag-empty">← 数字を入れて「診断する」を押すと、ここに信号機判定が出ます。<br><br>
+        初期値は、よくある新築ワンルーム提案の数字です。まずはそのまま押してみてください。</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 違い -->
+<section id="chigai">
+  <div class="wrap">
+    <p class="eyebrow rv">WHY 現実派</p>
+    <h2 class="rv">「満室・金利固定・売りっぱなし」の計算は、計算ではない。</h2>
+    <p class="sec-lead rv">一般的なポータルサイト型シミュレーションと、現実派が織り込む前提の違いです。</p>
+    <div class="rv" style="overflow-x:auto">
+      <table class="cmp">
+        <thead><tr><th style="width:40%">織り込む前提</th><th>ポータル型シミュ</th><th class="hl">現実派</th></tr></thead>
+        <tbody>
+          <tr><td>変動金利の上昇シナリオ</td><td class="ng">固定のまま</td><td class="ok hl">毎年の上昇ペース+上限を設定</td></tr>
+          <tr><td>家賃の経年下落</td><td class="ng">ずっと同額</td><td class="ok hl">年率で逓減</td></tr>
+          <tr><td>退去・空室・募集広告料(AD)</td><td class="ng">満室想定</td><td class="ok hl">入居期間×空室月数で再現</td></tr>
+          <tr><td>原状回復費(経年劣化は大家負担)</td><td class="ng">なし</td><td class="ok hl">退去のたび計上</td></tr>
+          <tr><td>給湯器・エアコン等の設備交換</td><td class="ng">なし</td><td class="ok hl">周期×費用で台帳管理</td></tr>
+          <tr><td>所得税・住民税、デッドクロス</td><td class="ng">税引前のみ</td><td class="ok hl">限界税率・償却切れまで反映</td></tr>
+          <tr><td>売却出口(残債・譲渡税差引)</td><td class="ng">考えない</td><td class="ok hl">最適売却年まで総当たり計算</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<!-- 機能 -->
+<section id="kinou">
+  <div class="wrap">
+    <p class="eyebrow rv">FEATURES</p>
+    <h2 class="rv">買う前の検証から、買った後の運用まで。</h2>
+    <p class="sec-lead rv">プロが意思決定に使う指標と、初めての1戸でも迷わない診断を、ひとつの画面に。</p>
+    <div class="feat-grid">
+      <div class="feat red rv"><span class="tag">SIGNATURE</span><h3>楽観×現実の並走比較</h3>
+        <p>同じ物件をポータル型の前提と現実の前提で同時に計算し、累積CFのギャップ=「楽観シミュが見落とす金額」を1本のグラフで突きつけます。</p></div>
+      <div class="feat rv"><h3>AI市場調査</h3>
+        <p>エリアと物件タイプを入れると、AIがウェブを調査して家賃トレンド・空室傾向・金利見通しを推定し、パラメータへ自動反映。結果は保存され何度でも呼び出せます。</p></div>
+      <div class="feat rv"><h3>信号機診断</h3>
+        <p>計算結果を青・黄・赤で総合判定し、理由を日本語で説明。「フルローン×低利回り」など典型的な失敗パターンは自動で警告します。</p></div>
+      <div class="feat rv"><h3>感度分析・ストレステスト</h3>
+        <p>どの前提が結果を最も動かすかをトルネードチャートで序列化。金利+2%pt・空室2倍の複合ストレスに耐えるかも一目で分かります。</p></div>
+      <div class="feat rv"><h3>IRR・CCR・DSCR / 物件比較</h3>
+        <p>金融機関が見る指標で複数候補を横並び評価。出口タイミングの総当たり計算で「何年目に売るのが最適か」まで出します。</p></div>
+      <div class="feat rv"><h3>運用管理(予実・台帳・申告)</h3>
+        <p>購入後は計画と実績の乖離を月次で追跡。設備の交換時期アラート、確定申告用の科目別集計CSVまでこれひとつで完結します。</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- audience -->
+<section>
+  <div class="wrap">
+    <p class="eyebrow rv">FOR WHOM</p>
+    <h2 class="rv">プロの精度を、はじめての1戸にも。</h2>
+    <div class="aud" style="margin-top:30px">
+      <div class="aud-card rv">
+        <p class="who">FOR PROFESSIONALS</p>
+        <h3>規模拡大を狙う投資家へ</h3>
+        <ul>
+          <li>30以上のパラメータを完全制御する詳細モード</li>
+          <li>DSCR・IRRベースの物件スクリーニングと比較表</li>
+          <li>銀行目線のストレステストで融資面談に備える</li>
+          <li>保有後は予実管理・申告集計まで一気通貫</li>
+        </ul>
+      </div>
+      <div class="aud-card rv">
+        <p class="who">FOR FIRST-TIMERS</p>
+        <h3>営業電話に迷っているあなたへ</h3>
+        <ul>
+          <li>入力は3つだけの「かんたんモード」</li>
+          <li>新築ワンルーム提案を1タップで検証するプリセット</li>
+          <li>専門用語は「?」をタップでその場解説</li>
+          <li>毎月の持ち出し額を、契約する前に知る</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- pricing -->
+<section id="ryokin">
+  <div class="wrap">
+    <p class="eyebrow rv">PRICING</p>
+    <h2 class="rv">料金プラン(予定)</h2>
+    <p class="sec-lead rv">正式リリース時の予定価格です。先行登録いただいた方には優待価格をご案内します。</p>
+    <div class="price-grid">
+      <div class="plan rv">
+        <h3>Free</h3>
+        <p class="pr">¥0<small> /月</small></p>
+        <p class="for">まず危険かどうか知りたい人に</p>
+        <ul>
+          <li>30秒診断・信号機判定</li>
+          <li>かんたんモード(3物件まで保存)</li>
+          <li>プリセット4種(新築ワンルーム検証含む)</li>
+          <li class="no">AI市場調査</li>
+          <li class="no">感度分析・ストレステスト</li>
+        </ul>
+        <a class="btn btn-o" href="#join">先行登録する</a>
+      </div>
+      <div class="plan featured rv">
+        <h3>Pro</h3>
+        <p class="pr">¥1,480<small> /月(税込)</small></p>
+        <p class="for">真剣に1棟目〜数戸を検討する人に</p>
+        <ul>
+          <li>Freeの全機能</li>
+          <li>詳細モード(全パラメータ・物件無制限)</li>
+          <li>AI市場調査 月10回+結果ライブラリ</li>
+          <li>感度分析・ストレステスト・出口最適化</li>
+          <li>IRR/CCR/DSCR・物件横並び比較</li>
+          <li>運用管理(予実・設備台帳・申告CSV)</li>
+        </ul>
+        <a class="btn btn-r" href="#join">先行登録する</a>
+      </div>
+      <div class="plan rv">
+        <h3>Team</h3>
+        <p class="pr">準備中</p>
+        <p class="for">FP・買側仲介・資産コンサルの方に</p>
+        <ul>
+          <li>Proの全機能</li>
+          <li>顧客向け診断レポートの発行</li>
+          <li>複数メンバーでの物件共有</li>
+          <li>ロゴ差し替え(ホワイトラベル)</li>
+        </ul>
+        <a class="btn btn-o" href="#join">相談する</a>
+      </div>
+    </div>
+    <p class="price-note rv">※ 価格・提供内容は正式リリースまでに変更される場合があります。AI市場調査の回数はAPI原価に基づき設定しています。</p>
+  </div>
+</section>
+
+<!-- faq -->
+<section id="faq">
+  <div class="wrap">
+    <p class="eyebrow rv">FAQ</p>
+    <h2 class="rv">よくある質問</h2>
+    <div class="faq rv" style="margin-top:26px">
+      <details>
+        <summary>シミュレーション結果は投資判断にそのまま使えますか?</summary>
+        <p class="a">いいえ。本サービスはユーザーが設定した前提に基づく試算を提供するもので、特定の物件の購入を推奨・助言するものではありません。実際の投資判断は、レントロール・登記・管理規約・重要事項調査報告書などの一次資料を確認のうえ、ご自身の責任で行ってください。</p>
+      </details>
+      <details>
+        <summary>「現実」の前提が厳しすぎませんか?</summary>
+        <p class="a">前提はすべて自分で変更できます。現実派の初期値は「この条件でも黒字なら買える」という保守側に寄せてあり、楽観側に外れた入力には注意が表示されます。厳しめの前提で生き残る物件だけを買う、が私たちの思想です。</p>
+      </details>
+      <details>
+        <summary>AI市場調査の数値は正確ですか?</summary>
+        <p class="a">AIがウェブ上の公開情報を調査して推定した参考値であり、正確性を保証するものではありません。推定根拠の要約と参照元を併記しますので、妥当性を確認のうえご利用ください。</p>
+      </details>
+      <details>
+        <summary>税金の計算は申告に使えますか?</summary>
+        <p class="a">税計算は限界税率による簡易計算で、個別の税務相談・税務代理に代わるものではありません。申告にあたっては税理士または税務署にご確認ください。科目別集計CSVは、その準備を楽にするための機能です。</p>
+      </details>
+      <details>
+        <summary>業者に提案された物件を入れてもいいですか?</summary>
+        <p class="a">むしろそのために作りました。提案書の物件価格・想定家賃・頭金を30秒診断に入れるだけで、毎月の持ち出しの有無と返済余裕が分かります。契約前に、一度だけ立ち止まってください。</p>
+      </details>
+    </div>
+  </div>
+</section>
+
+<!-- join -->
+<section id="join">
+  <div class="wrap">
+    <p class="tate-h">― 先行登録受付中 ―</p>
+    <h2>契約書にハンコを押す前に、<br>現実を一度だけ。</h2>
+    <form class="join-form" id="join-form">
+      <input type="email" id="join-email" placeholder="メールアドレス" required aria-label="メールアドレス">
+      <button class="btn btn-r" type="submit">優待価格で先行登録</button>
+    </form>
+    <p class="join-msg" id="join-msg"></p>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    <div class="disc">
+      免責事項:本サービスが提供するシミュレーション・診断・AI調査結果はすべて参考情報であり、その正確性・完全性を保証するものではありません。
+      本サービスは金融商品取引法上の投資助言・代理業、宅地建物取引業、税理士法上の税務相談に該当する行為を行うものではありません。
+      不動産投資には元本割れを含むリスクがあり、最終的な投資判断はご自身の責任で行ってください。
+    </div>
+    <div class="links">
+      <a href="#">運営者情報</a><a href="#">特定商取引法に基づく表記</a><a href="#">プライバシーポリシー</a><a href="#">利用規約</a>
+    </div>
+    <p>© 2026 現実派 — 不動産収支シミュレーター</p>
+  </div>
+</footer>
+
+<script>
+/* ---------- 30秒診断 ---------- */
+(function(){
+  const fmt = n => Math.round(n).toLocaleString();
+  const run = () => {
+    const price = (parseFloat(document.getElementById("d-price").value)||0)*10000; // 円
+    const rent  = parseFloat(document.getElementById("d-rent").value)||0;
+    const down  = (parseFloat(document.getElementById("d-down").value)||0)*10000;
+    const el = document.getElementById("d-result");
+    if(price<=0||rent<=0){ el.innerHTML='<div class="diag-empty">物件価格と家賃を入力してください。</div>'; return; }
+
+    // 保守的な固定前提
+    const RATE=0.018/12, N=35*12, OCC=0.96, MGMT=0.05,
+          BLDG=12000, FIX_Y=70000+15000+30000; // 税+保険+修繕
+    const loan = Math.max(price-down,0);
+    const pay = loan>0 ? loan*RATE/(1-Math.pow(1+RATE,-N)) : 0;
+    const incomeM = rent*OCC;
+    const opexM = rent*MGMT*OCC + BLDG + FIX_Y/12;
+    const cfM = incomeM - opexM - pay;
+    const noiY = (incomeM-opexM)*12;
+    const dscr = pay>0 ? noiY/(pay*12) : null;
+    const gross = rent*12/price*100;
+
+    const flagsR=[], flagsY=[];
+    if(cfM<0) flagsR.push("毎月約"+fmt(-cfM)+"円の持ち出しが発生します");
+    if(dscr!==null && dscr<1.1) flagsR.push("DSCR "+dscr.toFixed(2)+" — 返済余裕がほぼなく、金融機関の目安(1.2以上)を下回ります");
+    else if(dscr!==null && dscr<1.3) flagsY.push("DSCR "+dscr.toFixed(2)+" — 返済余裕が薄く、金利上昇・空室への耐性が限られます");
+    if(down<price*0.1 && gross<5) flagsR.push("ほぼフルローン × 表面利回り"+gross.toFixed(1)+"% — 新築ワンルーム商法でよく見る危険な組み合わせです");
+    if(gross<4) flagsY.push("表面利回り"+gross.toFixed(1)+"%は、経費を引くとほとんど残らない水準です");
+
+    const level = flagsR.length ? "r" : (flagsY.length ? "y" : "g");
+    const verdict = {g:["健全","var(--green)"], y:["要注意","#B07A1A"], r:["危険","var(--red)"]}[level];
+    const summary = cfM>=0
+      ? "この前提では、毎月約"+fmt(cfM)+"円が手元に残る計算です。ただしこれは初年度の姿で、金利上昇・家賃下落・設備交換は年々重くなります。"
+      : "この前提では、家賃が入っても毎月約"+fmt(-cfM)+"円を給料から補填する構造です。「節税になる」「年金代わり」という説明は、この持ち出しを覆い隠す言葉かもしれません。";
+
+    el.innerHTML =
+      '<div class="lights">'+
+        '<span class="light'+(level==="g"?" on-g":"")+'"></span>'+
+        '<span class="light'+(level==="y"?" on-y":"")+'"></span>'+
+        '<span class="light'+(level==="r"?" on-r":"")+'"></span>'+
+        '<span class="verdict" style="color:'+verdict[1]+'">診断: '+verdict[0]+'</span>'+
+      '</div>'+
+      '<div class="diag-kpis num">'+
+        '<span>月次収支<br><b style="color:'+(cfM<0?"var(--red)":"var(--green)")+'">'+(cfM>=0?"+":"−")+fmt(Math.abs(cfM))+'円</b></span>'+
+        '<span>返済余裕(DSCR)<br><b>'+(dscr===null?"—":dscr.toFixed(2))+'</b></span>'+
+        '<span>表面利回り<br><b>'+gross.toFixed(2)+'%</b></span>'+
+      '</div>'+
+      '<p class="diag-msg">'+summary+'</p>'+
+      '<div class="diag-flags">'+
+        flagsR.map(f=>'<div class="f-r">⛔ '+f+'</div>').join("")+
+        flagsY.map(f=>'<div class="f-y">⚠ '+f+'</div>').join("")+
+      '</div>'+
+      '<p class="diag-more">これは初年度の簡易判定です。フル版では金利上昇・家賃下落・原状回復・設備交換・税・売却出口まで35年分を計算し、感度分析とストレステストで耐久力を検証できます。</p>';
+  };
+  document.getElementById("d-run").addEventListener("click", run);
+})();
+
+/* ---------- 先行登録フォーム ---------- */
+(function(){
+  // 接続方法: FormspreeやGoogleフォーム等のエンドポイントURLを下に設定してください。
+  const FORM_ENDPOINT = ""; // 例: "https://formspree.io/f/xxxxxxxx"
+  document.getElementById("join-form").addEventListener("submit", async (e)=>{
+    e.preventDefault();
+    const msg = document.getElementById("join-msg");
+    const email = document.getElementById("join-email").value;
+    if(!FORM_ENDPOINT){
+      msg.textContent = "(開発メモ)送信先が未設定です。HTML内のFORM_ENDPOINTにフォームサービスのURLを設定すると有効になります。";
+      return;
+    }
+    try{
+      const res = await fetch(FORM_ENDPOINT,{method:"POST",
+        headers:{"Content-Type":"application/json"},
+        body:JSON.stringify({email})});
+      msg.textContent = res.ok ? "登録ありがとうございます。リリース時に優待価格をご案内します。"
+        : "送信に失敗しました。時間をおいてもう一度お試しください。";
+    }catch(_){
+      msg.textContent = "送信に失敗しました。時間をおいてもう一度お試しください。";
+    }
+  });
+})();
+
+/* ---------- スクロール表示 ---------- */
+(function(){
+  const io = new IntersectionObserver((es)=>{
+    es.forEach(e=>{ if(e.isIntersecting){ e.target.classList.add("in"); io.unobserve(e.target);} });
+  },{threshold:.12});
+  document.querySelectorAll(".rv").forEach(el=>io.observe(el));
+})();
+</script>
+</body>
+</html>
