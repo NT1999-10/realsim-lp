@@ -1,0 +1,604 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>YOMUの計算ロジックを全部公開します — YOMU</title>
+<meta name="description" content="不動産投資シミュレーターYOMUが、35年の収支・税・売却・IRR・DSCR・信号機診断をどんな式で出しているか。サンプル物件の実数値つきで、計算していないことまで全部書きました。">
+<link rel="canonical" href="https://realsim-lp.vercel.app/guide/calculation-logic.html">
+<meta property="og:title" content="YOMUの計算ロジックを全部公開します">
+<meta property="og:description" content="不動産投資シミュレーターYOMUが、35年の収支・税・売却・IRR・DSCR・信号機診断をどんな式で出しているか。サンプル物件の実数値つきで、計算していないことまで全部書きました。">
+<meta property="og:type" content="article">
+<meta property="og:url" content="https://realsim-lp.vercel.app/guide/calculation-logic.html">
+<meta property="og:site_name" content="YOMU">
+<meta name="twitter:card" content="summary">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+JP:wght@600;700&family=Zen+Kaku+Gothic+New:wght@400;500;700;900&family=Roboto+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16.png">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<meta name="theme-color" content="#12233F">
+<link rel="stylesheet" href="/guide/assets/guide.css">
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
+<defs>
+  <symbol id="i-alert" viewBox="0 0 24 24"><path d="M12 3.5L22 20H2z"/><path d="M12 10v4.5M12 17.2v.1"/></symbol>
+  <symbol id="i-arrow" viewBox="0 0 24 24"><path d="M5 12h14"/><polyline points="13 6 19 12 13 18"/></symbol>
+</defs>
+</svg>
+
+<header>
+  <div class="wrap nav">
+    <a class="brand" href="/" aria-label="YOMU"><svg viewBox="0 0 2923 711" fill="none" role="img" aria-label="YOMU">
+  <g transform="translate(0,704) scale(1,-1)">
+    <path fill="currentColor" transform="translate(0,0)" d="M590 695 360 252V0H246V252L15 695H142L303 354L464 695Z"/>
+    <path fill="#DBA53F" transform="translate(577,0)" d="M37 349Q37 451 84.5 532.0Q132 613 213.5 658.5Q295 704 392 704Q490 704 571.5 658.5Q653 613 700.0 532.0Q747 451 747 349Q747 247 700.0 165.5Q653 84 571.5 38.5Q490 -7 392 -7Q295 -7 213.5 38.5Q132 84 84.5 165.5Q37 247 37 349ZM630 349Q630 426 599.5 484.0Q569 542 515.0 573.0Q461 604 392 604Q323 604 269.0 573.0Q215 542 184.5 484.0Q154 426 154 349Q154 272 184.5 213.5Q215 155 269.0 123.5Q323 92 392 92Q461 92 515.0 123.5Q569 155 599.5 213.5Q630 272 630 349Z"/>
+    <path fill="currentColor" transform="translate(1351,0)" d="M807 695V0H693V476L481 0H402L189 476V0H75V695H198L442 150L685 695Z"/>
+    <path fill="currentColor" transform="translate(2233,0)" d="M188 695V252Q188 173 229.5 133.0Q271 93 345 93Q420 93 461.5 133.0Q503 173 503 252V695H617V254Q617 169 580.0 110.0Q543 51 481.0 22.0Q419 -7 344 -7Q269 -7 207.5 22.0Q146 51 110.0 110.0Q74 169 74 254V695Z"/>
+  </g>
+</svg></a>
+    <nav>
+      <a href="/#yomu">YOMUとは</a><a href="/#diag">30秒診断</a><a href="/#why">選ばれる理由</a>
+      <a href="/#features">機能</a><a href="/#engine">計算エンジン</a><a href="/#price">料金</a><a href="/#faq">FAQ</a>
+    </nav>
+    <a class="btn btn-p" href="https://realsim-app.vercel.app">無料ではじめる</a>
+  </div>
+</header>
+
+<main class="g-main">
+  <header class="g-head">
+    <p class="g-label">GUIDE</p>
+    <h1>YOMUの計算ロジックを全部公開します</h1>
+    <p class="g-meta">計算仕様 2026年9月版 ／ 更新 2026-09-11</p>
+  </header>
+  <nav class="g-toc" aria-label="目次">
+    <p class="g-toc-title">目次</p>
+    <ol>
+<li><a href="#flow">1. 計算の全体像</a></li>
+<li><a href="#sample">2. この記事の計算例：サンプル物件</a></li>
+<li><a href="#loan">3. ローン</a></li>
+<li><a href="#rent-vacancy">4. 家賃と入居・退去</a></li>
+<li><a href="#expenses">5. 運営経費</a></li>
+<li><a href="#tax">6. 減価償却と税</a></li>
+<li><a href="#cashflow">7. キャッシュフロー</a></li>
+<li><a href="#exit">8. 売却と総合損益</a></li>
+<li><a href="#metrics">9. 投資指標：IRR・CCR・DSCR</a></li>
+<li><a href="#scenarios">10. 楽観シナリオは何を省いているか</a></li>
+<li><a href="#diagnosis">11. 信号機診断の判定ルール</a></li>
+<li><a href="#analysis">12. 感度分析・ストレステスト・最適売却年</a></li>
+<li><a href="#limits">13. YOMUが計算していないこと</a></li>
+<li><a href="#widget">14. このページの30秒診断について</a></li>
+<li><a href="#changelog">更新履歴</a></li>
+</ol>
+  </nav>
+  <article class="g-body">
+<blockquote><p>この記事は <strong>2026年9月時点の計算仕様</strong> です。計算方法を変えたら記事も書き換え、末尾の更新履歴に残します。</p></blockquote>
+
+<p>YOMUは物件1件につき、同じ入力から <strong>保守シナリオ</strong> と <strong>楽観シナリオ</strong> の2本を計算し、その差を金額で出します。この記事は、その計算で「どの数字に何を掛け、何を引いているか」を省略せずに書いたものです。</p>
+
+<p>2,000万円を超える判断に使う数字を、中身の見えない箱から出すわけにはいきません。前提が自分の物件に合わないと思ったら、それが分かるように書きました。都合の悪い簡略化も、最後の「<a href="#limits">YOMUが計算していないこと</a>」にまとめています。</p>
+
+<p>なお、計算式はFreeでもProでも同じです。プランで変わるのは使える画面だけです。</p>
+
+<hr>
+
+<h2 id="flow">1. 計算の全体像</h2>
+
+<p>保有期間（初期値35年）を1年ずつ進め、各年を12ヶ月に分けて順に計算します。35年なら420ヶ月です。</p>
+
+<p>ただし、すべてが月ごとに変わるわけではありません。<strong>入居・退去とお金の出入りは月単位、金利や家賃の「水準」は年単位</strong>で動かしています。</p>
+
+<div class="table-wrap"><table>
+<thead><tr><th>タイミング</th><th>計算すること</th></tr></thead>
+<tbody>
+<tr><td>毎年のはじめ</td><td>その年の金利・家賃・建物管理費・経常修繕費の水準を決める。元利均等なら毎月返済額を計算し直す</td></tr>
+<tr><td>毎月</td><td>① 入居・退去の判定 → ② 入居中なら家賃・管理委託料・更新料 → ③ 建物管理費・固定資産税等・保険・経常修繕費 → ④ ローンの利息と元金</td></tr>
+<tr><td>毎年のおわり</td><td>設備交換・大規模修繕 → 減価償却と税 → 単年キャッシュフロー</td></tr>
+<tr><td>保有期間の最後</td><td>売却 → 総合損益 → IRR</td></tr>
+</tbody>
+</table></div>
+
+<p>金利は年に1回、年のはじめに改定します。月の途中で金利が変わるモデルではありません。</p>
+
+<hr>
+
+<h2 id="sample">2. この記事の計算例：サンプル物件</h2>
+
+<p>以下の数字はすべて、アプリのホームにある <strong>サンプル物件（1R・2,480万円）</strong> をそのまま計算した結果です。アプリで同じ物件を開けば、同じ数字が出ます。</p>
+
+<div class="table-wrap"><table>
+<thead><tr><th>区分</th><th>前提</th></tr></thead>
+<tbody>
+<tr><td>物件</td><td>価格 2,480万円 ／ 購入諸費用 7% ／ 建物割合 45% ／ 残存償却年数 37年</td></tr>
+<tr><td>家賃</td><td>月92,000円 ／ 下落率 年0.7% ／ 更新 2年ごと・貸主受取0.5ヶ月分 ／ 礼金 0ヶ月</td></tr>
+<tr><td>入退去</td><td>平均入居 5年 ／ 退去後の空室 1.5ヶ月 ／ 原状回復費 120,000円/退去 ／ 募集広告料 0.5ヶ月分</td></tr>
+<tr><td>融資</td><td>自己資金 100万円 ／ 35年・元利均等 ／ 当初金利 0.8% ／ 上昇 年+0.02pt ／ 上限 3.0%</td></tr>
+<tr><td>経費</td><td>管理委託料 家賃の4% ／ 建物管理費・修繕積立金 月10,000円（年+0.7%）／ 固定資産税等 年55,000円 ／ 保険 年12,000円</td></tr>
+<tr><td>修繕</td><td>経常修繕費 年20,000円（年+1.5%）／ エアコン 15年ごと12万円 ／ 給湯器 12年ごと18万円 ／ ガスコンロ 15年ごと6万円 ／ 大規模修繕 なし</td></tr>
+<tr><td>税</td><td>計算しない（税引前）。オンにした場合の例は限界税率30%・損益通算あり</td></tr>
+<tr><td>売却</td><td>35年目に売却 ／ 価格変動方式 年+0.5% ／ 売却諸費用 4% ／ 譲渡税を考慮</td></tr>
+</tbody>
+</table></div>
+
+<p>計算は円未満を含めて行っているため、表示した数字を足し引きすると1円ずれることがあります。</p>
+
+<hr>
+
+<h2 id="loan">3. ローン</h2>
+
+<h3>借入額</h3>
+
+<pre class="formula"><code>借入額 = 物件価格 − 自己資金</code></pre>
+
+<p>購入諸費用は借入に含めず、現金で払う前提です。サンプルでは借入2,380万円、現金で払う諸費用は173.6万円です。</p>
+
+<h3>金利</h3>
+
+<pre class="formula"><code>その年の金利 = min( 当初金利 + 年あたり上昇幅 × (経過年数 − 1) , 金利上限 )</code></pre>
+
+<p>サンプルでは1年目0.80%、2年目0.82%、10年目0.98%、20年目1.18%、35年目1.48%です（上限3.0%には届きません）。</p>
+
+<h3>毎月の返済</h3>
+
+<p><strong>元利均等</strong> では、毎年のはじめに「その時点の残債・残り回数・その年の金利」で毎月返済額を計算し直します。</p>
+
+<pre class="formula"><code>月利       = 年利 ÷ 12
+毎月返済額 = 残債 × 月利 ÷ ( 1 − (1 + 月利)^(−残り回数) )
+その月の利息 = 残債 × 月利
+その月の元金 = 毎月返済額 − その月の利息</code></pre>
+
+<p><strong>元金均等</strong> では、元金は毎月「当初借入額 ÷ 総回数」で一定、利息は同じく「残債 × 月利」です。</p>
+
+<p>サンプルの1年目は、毎月返済額64,989円。最初の月の利息は15,867円、元金は49,122円です。1年間の返済合計は779,862円（うち利息188,234円）になります。</p>
+
+<p>実際の変動金利ローンによくある「返済額の見直しは5年ごと」「見直し後の返済額は従来の1.25倍まで」というルールは再現していません。YOMUは金利が上がった年から返済額そのものを引き上げるので、金利上昇局面の途中年のキャッシュフローは厳しめに出ます。</p>
+
+<hr>
+
+<h2 id="rent-vacancy">4. 家賃と入居・退去</h2>
+
+<h3>家賃</h3>
+
+<pre class="formula"><code>その年の月額家賃 = 当初家賃 × (1 − 家賃下落率)^(経過年数 − 1)</code></pre>
+
+<p>サンプルでは2年目91,356円、10年目86,364円、20年目80,505円、35年目72,454円です。</p>
+
+<p>保守シナリオでは、<strong>入居中の人の家賃も毎年下げます</strong>。現実には入れ替えや更新のときにしか下がらないことが多いので、ここは保守側に倒した簡略化です。</p>
+
+<h3>入居・退去のサイクル</h3>
+
+<p>保守シナリオでは、次のサイクルを保有期間の最後まで機械的に繰り返します。</p>
+
+<ol>
+<li>購入時点で入居者がいる状態から始める</li>
+<li>平均入居期間が過ぎた翌月に退去。その月に <strong>原状回復費</strong> を経費に計上</li>
+<li>空室期間は家賃ゼロ。建物管理費・税・保険・ローン返済は止まらない</li>
+<li>次の入居者が入った月に、<strong>募集広告料</strong>（家賃×ADヶ月数）を経費、<strong>礼金</strong>（家賃×礼金ヶ月数）を収入に計上</li>
+<li>入居中の月だけ、家賃と <strong>管理委託料</strong>（家賃×委託料率）を計上</li>
+<li>同じ入居者の入居月数が「更新周期×12」の倍数に達した月に、<strong>更新料</strong>（家賃×貸主受取ヶ月数）を収入に計上</li>
+</ol>
+
+<p>入居期間と空室期間は月単位に四捨五入します。サンプルの空室1.5ヶ月は2ヶ月として計算されます。退去の時期は毎回「平均」どおりで、早まったり遅れたりするばらつきは入れていません。その影響は<a href="#analysis">感度分析</a>で入居期間±1年、空室±1ヶ月を振って確認します。</p>
+
+<h3>例：サンプル物件の6年目</h3>
+
+<p>5年間住んだ最初の入居者が6年目の1月に退去し、2ヶ月の空室を経て3月に次の入居者が入ります。</p>
+
+<div class="table-wrap"><table>
+<thead><tr><th>項目</th><th class="num">金額</th></tr></thead>
+<tbody>
+<tr><td>家賃収入（88,825円×10ヶ月）</td><td class="num">888,248円</td></tr>
+<tr><td>原状回復費</td><td class="num">−120,000円</td></tr>
+<tr><td>募集広告料（0.5ヶ月分）</td><td class="num">−44,412円</td></tr>
+<tr><td>管理委託料（収入の4%）</td><td class="num">−35,530円</td></tr>
+<tr><td>建物管理費・修繕積立金</td><td class="num">−124,259円</td></tr>
+<tr><td>固定資産税等・保険</td><td class="num">−67,000円</td></tr>
+<tr><td>経常修繕費</td><td class="num">−21,546円</td></tr>
+<tr><td>ローン返済</td><td class="num">−791,892円</td></tr>
+<tr><td><strong>単年キャッシュフロー</strong></td><td class="num"><strong>−316,391円</strong></td></tr>
+</tbody>
+</table></div>
+
+<p>1年目に+72,978円だったキャッシュフローが、退去が1回あるだけでこうなります。</p>
+
+<hr>
+
+<h2 id="expenses">5. 運営経費</h2>
+
+<div class="table-wrap"><table>
+<thead><tr><th>項目</th><th>計上のしかた</th><th>保守</th><th>楽観</th></tr></thead>
+<tbody>
+<tr><td>管理委託料</td><td>入居中の月だけ、家賃×委託料率</td><td>○</td><td>○（常に満室）</td></tr>
+<tr><td>建物管理費・修繕積立金</td><td>毎月。毎年、増額率で複利増額</td><td>増額あり</td><td>当初額のまま</td></tr>
+<tr><td>固定資産税等・保険・その他</td><td>年額÷12を毎月。増額なし</td><td>○</td><td>○</td></tr>
+<tr><td>経常修繕費</td><td>年額÷12を毎月。毎年、上昇率で複利増額</td><td>上昇あり</td><td>当初額のまま</td></tr>
+<tr><td>設備交換</td><td>周期の倍数の年に全額（給湯器12年ごと→12年目・24年目）</td><td>○</td><td>計上しない</td></tr>
+<tr><td>大規模修繕</td><td>周期の倍数の年に全額</td><td>○</td><td>計上しない</td></tr>
+<tr><td>原状回復費・募集広告料</td><td>退去・入居のたび</td><td>○</td><td>計上しない</td></tr>
+</tbody>
+</table></div>
+
+<p>設備交換の周期は <strong>購入1年目から数えます</strong>。設備台帳に入れた設置年は、この収支計算には使っていません。設備交換・大規模修繕・原状回復費・募集広告料・固定資産税等には物価上昇を掛けていません。</p>
+
+<hr>
+
+<h2 id="tax">6. 減価償却と税</h2>
+
+<p>税は「不動産所得への課税を考慮する」をオンにしたときだけ計算します。<strong>初期設定はオフで、表示されるキャッシュフローは税引前です。</strong></p>
+
+<h3>減価償却費</h3>
+
+<pre class="formula"><code>年間の減価償却費 = 物件価格 × 建物割合 ÷ 残存償却年数</code></pre>
+
+<p>定額で、残存償却年数を過ぎた年から0になります。サンプルは2,480万円×45%÷37年＝年301,622円です。</p>
+
+<h3>税額</h3>
+
+<pre class="formula"><code>課税所得 = 収入 − 運営経費（設備交換・大規模修繕を含む） − ローン利息 − 減価償却費
+税額     = 課税所得 × 限界税率（所得税＋住民税）</code></pre>
+
+<p>ローンの元金は経費にならないので引きません。<strong>損益通算あり</strong> の場合、課税所得がマイナスなら「マイナス×税率」を還付（給与などの税が減る分）としてキャッシュフローに足します。<strong>損益通算なし</strong> の場合、マイナスの年の税は0です。</p>
+
+<p>サンプルを限界税率30%で計算すると、1年目の課税所得は362,985円、税額は108,895円です。税引前で+72,978円だった1年目のキャッシュフローは、税引後では <strong>−35,917円</strong> になります。</p>
+
+<h3>デッドクロス</h3>
+
+<p>ローンの元金返済（お金は出ていくのに経費にならない）が、減価償却費（経費になるのにお金は出ていかない）を上回る状態をデッドクロスと呼びます。YOMUでは、償却が切れた年から課税所得が一段上がり、年次明細の「税」の列が跳ねる形で表れます。</p>
+
+<p>サンプル物件は1年目から元金591,628円が償却費301,622円を上回っていますが、残存償却年数37年が保有期間35年より長いため、償却切れによる税の跳ね上がりは期間内に起きません。</p>
+
+<hr>
+
+<h2 id="cashflow">7. キャッシュフロー</h2>
+
+<pre class="formula"><code>単年キャッシュフロー = 収入 − 運営経費 − ローン返済（元金＋利息） − 税
+累積キャッシュフロー = 単年キャッシュフローの合計</code></pre>
+
+<p>サンプルの保守シナリオでは、1年目は+72,978円（月あたり約6,081円）、初めて単年で赤字になるのは6年目、35年間の累積は <strong>−5,395,484円</strong> です。</p>
+
+<hr>
+
+<h2 id="exit">8. 売却と総合損益</h2>
+
+<h3>売却価格</h3>
+
+<p>2つの方式から選べます。</p>
+
+<pre class="formula"><code>利回り方式   売却価格 = 売却する年の月額家賃 × 12 ÷ 売却時の表面利回り
+価格変動方式 売却価格 = 物件価格 × (1 + 年あたり変動率)^保有年数</code></pre>
+
+<p>利回り方式の家賃は、売却する年の満室時の家賃です。</p>
+
+<h3>売却手取りと総合損益</h3>
+
+<pre class="formula"><code>売却諸費用   = 売却価格 × 売却諸費用率
+簿価         = 物件価格 − 減価償却費の累計
+譲渡税       = max( 0 , 売却価格 − 売却諸費用 − 簿価 ) × 20.315%
+売却手取り   = 売却価格 − 売却諸費用 − 売却時の残債 − 譲渡税
+初期自己資金 = 自己資金 + 物件価格 × 購入諸費用率
+総合損益     = 累積キャッシュフロー + 売却手取り − 初期自己資金</code></pre>
+
+<h3>例：サンプル物件を35年目に売却</h3>
+
+<div class="table-wrap"><table>
+<thead><tr><th>項目</th><th class="num">金額</th></tr></thead>
+<tbody>
+<tr><td>売却価格（2,480万円×1.005^35）</td><td class="num">29,530,027円</td></tr>
+<tr><td>売却諸費用（4%）</td><td class="num">−1,181,201円</td></tr>
+<tr><td>簿価（2,480万円 − 償却累計10,556,757円）</td><td class="num">14,243,243円</td></tr>
+<tr><td>譲渡税（譲渡益14,105,583円×20.315%）</td><td class="num">−2,865,549円</td></tr>
+<tr><td>残債</td><td class="num">0円</td></tr>
+<tr><td><strong>売却手取り</strong></td><td class="num"><strong>25,483,277円</strong></td></tr>
+<tr><td>累積キャッシュフロー</td><td class="num">−5,395,484円</td></tr>
+<tr><td>初期自己資金（100万円＋諸費用173.6万円）</td><td class="num">−2,736,000円</td></tr>
+<tr><td><strong>総合損益</strong></td><td class="num"><strong>+17,351,793円</strong></td></tr>
+</tbody>
+</table></div>
+
+<p>家賃収入だけでは540万円のマイナスで、総合損益のプラスは売却でつくられています。つまりこの物件の結論は、売却の前提ひとつで大きく変わります。</p>
+
+<p>同じ物件を利回り方式・売却時利回り6%で計算すると、売却価格は72,454円×12÷6%＝約1,449万円になり、総合損益は約+578万円まで下がります。売却の前提は、必ず両方の方式で確かめてください。</p>
+
+<hr>
+
+<h2 id="metrics">9. 投資指標：IRR・CCR・DSCR</h2>
+
+<h3 id="irr">IRR（内部収益率）</h3>
+
+<p>年ごとのお金の出入りを並べ、その正味現在価値が0になる割引率を求めます。</p>
+
+<pre class="formula"><code>0年目   : −初期自己資金
+1〜N−1年目: その年の単年キャッシュフロー
+N年目   : その年の単年キャッシュフロー + 売却手取り</code></pre>
+
+<p>−95%から+200%の範囲を二分法で100回絞り込みます。範囲内に答えがない場合（全期間赤字など）は「—」と表示します。サンプルのIRRは <strong>5.16%</strong> です。</p>
+
+<p>税をオフにしていても、「譲渡税を考慮する」がオンなら売却手取りから譲渡税は引かれています。</p>
+
+<h3 id="ccr">CCR（自己資金配当率）</h3>
+
+<pre class="formula"><code>CCR = 1年目の単年キャッシュフロー ÷ 初期自己資金</code></pre>
+
+<p>サンプルは72,978円÷2,736,000円＝ <strong>2.67%</strong> です。</p>
+
+<h3 id="dscr">DSCR（返済余裕率）</h3>
+
+<pre class="formula"><code>NOI（営業純収益） = 1年目の収入 − 1年目の運営経費     ※ローン返済と税は含まない
+DSCR             = NOI ÷ 1年目のローン返済額（元金＋利息）</code></pre>
+
+<p>サンプルは852,840円÷779,862円＝ <strong>1.09</strong> です。1.0を下回ると、家賃から経費を払った残りでローンを返しきれません。金融機関は1.2〜1.3以上を目安に見ることが多い指標です。</p>
+
+<p><strong>注意してほしいのは、YOMUのDSCRは1年目の値だということです。</strong> 1年目は金利上昇の前で、最初の退去もまだ起きていません。多くの物件で、保有期間中もっとも余裕のある年です。1年目のDSCRが1.2あっても、6年目や金利が上がった後に同じ余裕があるとは限りません。</p>
+
+<div class="g-widget" data-widget="shindan">
+<div class="diag">
+      <div class="diag-in">
+        <div class="field"><label>物件価格 <b>PRICE</b></label><div class="box"><input id="i_price" type="number" value="2480" min="100" step="10"><span class="unit">万円</span></div></div>
+        <div class="field"><label>想定月額家賃 <b>RENT</b></label><div class="box"><input id="i_rent" type="number" value="92000" min="10000" step="1000"><span class="unit">円</span></div></div>
+        <div class="field"><label>自己資金・頭金 <b>EQUITY</b></label><div class="box"><input id="i_down" type="number" value="100" min="0" step="10"><span class="unit">万円</span></div></div>
+        <p class="note">初期値は、よくある新築ワンルーム提案の数字です。まずはそのまま触ってみてください。</p>
+        <div class="kv" style="grid-template-columns:1fr 1fr">
+          <div><span>実効家賃収入 /月</span><b id="b_inc" style="font-size:15px">—</b></div>
+          <div><span>運営費 /月</span><b id="b_ope" style="font-size:15px">—</b></div>
+          <div><span>借入額</span><b id="b_loan" style="font-size:15px">—</b></div>
+          <div><span>NOI /月</span><b id="b_noi" style="font-size:15px">—</b></div>
+        </div>
+        <p class="assump">前提：金利 1.8% / 35年元利均等 / 管理委託 5% / 建物管理費・修繕積立 月 12,000円 / 税・保険・小修繕 年 115,000円 / 稼働率 96%。フル版ではこれら <b>30以上</b> の前提をすべて自分で設定できます。</p>
+      </div>
+      <div class="diag-out">
+        <div class="signal" id="sig">
+          <div class="lamp"><i data-c="r" id="l_r"></i><i data-c="y" id="l_y"></i><i data-c="g" id="l_g"></i></div>
+          <div class="txt"><b id="s_title">判定中…</b><span id="s_desc">数値を入力すると即座に再計算します。</span></div>
+        </div>
+        <div class="res">
+          <div><span>月次CF</span><b id="r_cf">—</b></div>
+          <div><span>DSCR</span><b id="r_dscr">—</b></div>
+          <div><span>毎月の返済</span><b id="r_pay">—</b></div>
+          <div><span>表面利回り</span><b id="r_gross">—</b></div>
+          <div><span>実質利回り</span><b id="r_net">—</b></div>
+          <div><span>月CF×420ヶ月</span><b id="r_total">—</b></div>
+        </div>
+        <div class="alert" style="margin-top:14px">
+          <div class="ico-box red"><svg class="ico"><use href="#i-alert"/></svg></div>
+          <span class="tx">この診断は簡易版です。フル版では家賃下落・金利上昇・退去・設備交換・税・売却出口まで含めた <b>420ヶ月の推移</b>として計算します。</span>
+        </div>
+        <a class="btn btn-g" style="margin-top:14px" href="https://realsim-app.vercel.app">フル版で35年を計算する<svg class="ico" style="stroke-width:2"><use href="#i-arrow"/></svg></a>
+      </div>
+    </div>
+<script>
+(function(){
+  var P=document.getElementById('i_price'),R=document.getElementById('i_rent'),D=document.getElementById('i_down');
+  var $=function(id){return document.getElementById(id);};
+  var yen=function(n){return (n<0?'−':'')+Math.abs(Math.round(n)).toLocaleString('ja-JP');};
+  function calc(){
+    var price=(+P.value||0)*10000, rent=(+R.value||0), down=(+D.value||0)*10000;
+    var loan=Math.max(price-down,0), r=0.018/12, n=420;
+    var pay = loan>0 ? loan*r/(1-Math.pow(1+r,-n)) : 0;
+    var income=rent*0.96, opex=income*0.05+12000+115000/12, noi=income-opex, cf=noi-pay;
+    var dscr = pay>0 ? noi/pay : 99;
+    $('r_cf').textContent=yen(cf)+'円'; $('r_cf').className=cf>=0?'up':'dn';
+    $('r_dscr').textContent=dscr.toFixed(2); $('r_dscr').className=dscr>=1.2?'up':(dscr>=1?'':'dn');
+    $('r_pay').textContent=yen(pay)+'円';
+    $('r_gross').textContent=(price>0?(rent*12/price*100):0).toFixed(2)+'%';
+    $('r_net').textContent=(price>0?(noi*12/price*100):0).toFixed(2)+'%';
+    $('r_total').textContent=yen(cf*420/10000)+'万円'; $('r_total').className=cf>=0?'up':'dn';
+    $('b_inc').textContent=yen(income)+'円'; $('b_ope').textContent='−'+yen(opex)+'円';
+    $('b_loan').textContent=yen(loan/10000)+'万円'; $('b_noi').textContent=yen(noi)+'円';
+    var t,d,c;
+    if(cf>=0&&dscr>=1.2){c='g';t='青信号 — 保守的な前提でも黒字';d='この前提でも毎月手元に残り、返済余裕（DSCR）も確保できています。';}
+    else if(cf>=-15000&&dscr>=1.0){c='y';t='黄信号 — 余裕が薄い';d='黒字と赤字の境目です。金利が1%上がる、空室が1ヶ月延びるだけで反転します。';}
+    else{c='r';t='赤信号 — 毎月の持ち出しが発生';d='家賃収入が返済と経費を賄えていません。価格・頭金・家賃のいずれかを見直す必要があります。';}
+    ['r','y','g'].forEach(function(k){$('l_'+k).classList.toggle('on',k===c);});
+    $('sig').className='signal '+c; $('s_title').textContent=t; $('s_desc').textContent=d;
+  }
+  [P,R,D].forEach(function(e){e.addEventListener('input',calc);});
+  calc();
+})();
+</script>
+</div>
+
+<h3>その他の指標</h3>
+
+<div class="table-wrap"><table>
+<thead><tr><th>指標</th><th>定義</th><th>サンプル</th></tr></thead>
+<tbody>
+<tr><td>初めての赤字年</td><td>保守シナリオで単年キャッシュフローが初めてマイナスになる年</td><td>6年目</td></tr>
+<tr><td>自己資金の回収年</td><td>累積キャッシュフローが初期自己資金に届く年</td><td>期間内に届かない</td></tr>
+<tr><td>表面利回り</td><td>年間家賃 ÷ 物件価格</td><td>4.45%</td></tr>
+</tbody>
+</table></div>
+
+<hr>
+
+<h2 id="scenarios">10. 楽観シナリオは何を省いているか</h2>
+
+<p>楽観シナリオは、業者の提案書やポータルサイトの簡易シミュレーションによくある前提を再現したものです。</p>
+
+<div class="table-wrap"><table>
+<thead><tr><th>項目</th><th>保守シナリオ</th><th>楽観シナリオ</th></tr></thead>
+<tbody>
+<tr><td>金利</td><td>毎年上昇（上限まで）</td><td>当初金利のまま</td></tr>
+<tr><td>家賃</td><td>毎年下落</td><td>当初家賃のまま</td></tr>
+<tr><td>入居</td><td>平均入居期間ごとに退去・空室</td><td>保有期間中ずっと満室</td></tr>
+<tr><td>原状回復費・募集広告料</td><td>計上</td><td>計上しない</td></tr>
+<tr><td>礼金・更新料</td><td>計上</td><td>計上しない</td></tr>
+<tr><td>建物管理費・経常修繕費の上昇</td><td>あり</td><td>なし</td></tr>
+<tr><td>設備交換・大規模修繕</td><td>計上</td><td>計上しない</td></tr>
+<tr><td>税</td><td>設定に従う</td><td>計算しない</td></tr>
+<tr><td>管理委託料・固定資産税等・保険</td><td>計上</td><td>計上</td></tr>
+</tbody>
+</table></div>
+
+<pre class="formula"><code>シナリオ差額 = 楽観シナリオの累積キャッシュフロー − 保守シナリオの累積キャッシュフロー</code></pre>
+
+<p>サンプルでは、楽観 +2,554,229円 に対して保守 −5,395,484円、<strong>差額は7,949,713円</strong> です。1年目のキャッシュフローは両シナリオとも72,978円で同じで、差は2年目から開いていきます。提案書の1年目の数字が正しくても、それだけでは何も保証されないということです。</p>
+
+<hr>
+
+<h2 id="diagnosis">11. 信号機診断の判定ルール</h2>
+
+<p>判定は保守シナリオの結果に対して行います。まず、次の3つをすべて満たす物件を <strong>「総合成績が良好」</strong> とみなします。</p>
+
+<ul>
+<li>総合損益がプラス</li>
+<li>IRRが5%以上</li>
+<li>中度ストレス（当初金利+1pt・空室期間1.5倍・家賃下落率+0.5pt・修繕費上昇率+1pt）をかけても総合損益がプラス</li>
+</ul>
+
+<h3>赤（危険）— ひとつでも当てはまれば赤</h3>
+
+<div class="table-wrap"><table>
+<thead><tr><th>条件</th><th>補足</th></tr></thead>
+<tbody>
+<tr><td>1年目の毎月のキャッシュフローがマイナス</td><td></td></tr>
+<tr><td>1年目のDSCRが1.1未満</td><td>総合成績が良好なら黄に留める</td></tr>
+<tr><td>自己資金が物件価格の10%未満 かつ 表面利回り5%未満</td><td>総合成績が良好なら対象外</td></tr>
+<tr><td>総合損益がマイナス</td><td></td></tr>
+<tr><td>IRRがマイナス</td><td></td></tr>
+</tbody>
+</table></div>
+
+<h3>黄（要注意）— 赤に当てはまらず、次のどれかに当てはまれば黄</h3>
+
+<div class="table-wrap"><table>
+<thead><tr><th>条件</th><th>補足</th></tr></thead>
+<tbody>
+<tr><td>1年目のDSCRが1.1以上1.3未満</td><td></td></tr>
+<tr><td>1年目のDSCRが1.1未満（総合成績が良好な場合）</td><td></td></tr>
+<tr><td>IRRが0%以上2%未満</td><td></td></tr>
+<tr><td>5年目までに単年で赤字になる</td><td>1年目がプラスで、総合成績が良好でない場合</td></tr>
+<tr><td>下の「楽観的な入力」が2つ以上</td><td>1つだけなら青のまま注意書きを出す</td></tr>
+</tbody>
+</table></div>
+
+<p><strong>楽観的な入力として数えるもの</strong>：空室期間1ヶ月未満 ／ 家賃下落率0.5%未満（上昇前提を含む）／ 管理委託料3%未満 ／ 原状回復費5万円未満 ／ 金利上昇ゼロ ／ 平均入居期間8年超 ／ 経常修繕費 年1万円未満</p>
+
+<h3>青（健全）</h3>
+
+<p>赤にも黄にも当てはまらない物件です。</p>
+
+<h3>サンプル物件の判定</h3>
+
+<p>サンプルは <strong>黄</strong> です。1年目のDSCRが1.09で1.1を下回りますが、総合損益+1,735万円・IRR 5.16%・中度ストレスでも+972万円と総合成績が良好なので、赤ではなく黄に留まります。</p>
+
+<p>裏を返すと、IRRが5%をわずかに下回るだけで、この物件は赤に変わります。しきい値の境目にある物件ほど、信号の色より理由文と数字そのものを見てください。</p>
+
+<hr>
+
+<h2 id="analysis">12. 感度分析・ストレステスト・最適売却年</h2>
+
+<h3>感度分析</h3>
+
+<p>次の8項目を1つずつ上下に振り、総合損益がどれだけ動くかを出して、動きの大きい順に並べます。</p>
+
+<div class="table-wrap"><table>
+<thead><tr><th>項目</th><th>振り幅</th></tr></thead>
+<tbody>
+<tr><td>家賃</td><td>±10%</td></tr>
+<tr><td>家賃下落率</td><td>±0.5pt（下限0）</td></tr>
+<tr><td>当初金利</td><td>±0.5pt（下限0）</td></tr>
+<tr><td>金利上昇ペース</td><td>2倍 ／ ゼロ</td></tr>
+<tr><td>空室期間</td><td>±1ヶ月（下限0）</td></tr>
+<tr><td>平均入居期間</td><td>±1年（下限0.5年）</td></tr>
+<tr><td>原状回復費</td><td>±50%</td></tr>
+<tr><td>売却時利回り</td><td>±1pt（下限1%）</td></tr>
+</tbody>
+</table></div>
+
+<h3>ストレステスト</h3>
+
+<div class="table-wrap"><table>
+<thead><tr><th>名前</th><th>変える前提</th><th class="num">サンプルの総合損益</th></tr></thead>
+<tbody>
+<tr><td>ベース</td><td>現在の設定</td><td class="num">+1,735万円（IRR 5.16%）</td></tr>
+<tr><td>中度ストレス</td><td>当初金利+1pt・空室期間1.5倍・家賃下落率+0.5pt・修繕費上昇率+1pt</td><td class="num">+972万円（IRR 2.61%）</td></tr>
+<tr><td>重度ストレス</td><td>当初金利+2pt・空室期間2倍・家賃下落率+1pt・原状回復費1.5倍・売却時利回り+1pt</td><td class="num">+197万円（IRR 0.48%）</td></tr>
+</tbody>
+</table></div>
+
+<p>売却を価格変動方式で計算している場合、売却時利回りの変更は結果に影響しません。</p>
+
+<h3>最適売却年</h3>
+
+<p>3年目から保有期間の最後まで、各年に売却した場合の総合損益を計算し、金額が最大になる年を示します。IRRではなく総合損益の金額で比べています。サンプルの最適売却年は35年目です。</p>
+
+<hr>
+
+<h2 id="limits">13. YOMUが計算していないこと</h2>
+
+<p>計算を簡単にするために省いていることです。「影響」の欄は、実際より結果が良く出るか悪く出るかの向きを示します。</p>
+
+<div class="table-wrap"><table>
+<thead><tr><th>省いていること</th><th>影響</th></tr></thead>
+<tbody>
+<tr><td>変動金利の「5年ごと見直し」「1.25倍上限」（毎年、返済額を引き直す）</td><td>金利上昇の途中年は厳しめ</td></tr>
+<tr><td>入居中の家賃は据え置き、という現実（毎年下げる）</td><td>厳しめ</td></tr>
+<tr><td>退去時期のばらつき（毎回平均どおり）</td><td>どちらとも言えない</td></tr>
+<tr><td>固定資産税等・保険・設備交換・大規模修繕・原状回復費・募集広告料の物価上昇</td><td>甘め</td></tr>
+<tr><td>設備の実際の設置年（購入年から周期を数える）</td><td>どちらとも言えない</td></tr>
+<tr><td>税の支払い時期（実際は翌年に払う税を、その年に払う）</td><td>わずかに厳しめ</td></tr>
+<tr><td>所得の増減による税率の段階の変化（限界税率で一律）</td><td>どちらとも言えない</td></tr>
+<tr><td>設備交換・大規模修繕の資本的支出としての減価償却（全額をその年の経費にする）</td><td>その年は税が甘め、後の年は厳しめ</td></tr>
+<tr><td>土地を取得するための借入金の利子を損益通算できない制限</td><td>損益通算ありのとき甘め</td></tr>
+<tr><td>不動産所得の損失の繰越</td><td>損益通算なしのとき厳しめ</td></tr>
+<tr><td>所有期間5年以下の短期譲渡の税率（39.63%）。譲渡税は20.315%で一律</td><td>5年以内に譲渡益が出る売却では甘め</td></tr>
+<tr><td>購入諸費用を譲渡所得の取得費に含めること</td><td>譲渡税が多めに出る＝厳しめ</td></tr>
+<tr><td>売却時の空室（利回り方式は満室時の家賃で売却価格を出す）</td><td>甘め</td></tr>
+</tbody>
+</table></div>
+
+<p>税の計算は判断の目安で、確定申告や個別の税務相談に代わるものではありません。</p>
+
+<hr>
+
+<h2 id="widget">14. このページの30秒診断について</h2>
+
+<p><a href="#dscr">DSCRの節</a>に置いた30秒診断は、アプリ本体の計算エンジンとは別の簡易版です。物件価格・家賃・自己資金の3つから <strong>1年目の1ヶ月分だけ</strong> を計算します。</p>
+
+<pre class="formula"><code>家賃収入 = 家賃 × 96%（入居率）
+経費     = 家賃収入 × 5% + 12,000円 + 115,000円 ÷ 12
+毎月返済 = 金利1.8%・35年・元利均等</code></pre>
+
+<p>家賃下落・金利上昇・退去・設備交換・税・売却は入っていません。同じ入力でも、アプリのDSCRとは値が少し変わります。35年分の推移を見るには、アプリで計算してください。</p>
+
+<hr>
+
+<h2 id="changelog">更新履歴</h2>
+
+<div class="table-wrap"><table>
+<thead><tr><th>日付</th><th>内容</th></tr></thead>
+<tbody>
+<tr><td>2026-09-11</td><td>初版公開（2026年9月版の計算仕様）</td></tr>
+<tr><td>2026-09-10</td><td>公開前に、売却価格（利回り方式）の計算で売却時利回りが10%未満のとき10%として扱われていた不具合を修正。この記事は修正後の仕様で書いています。利回り方式で売却を計算していた物件は、修正により売却価格・総合損益・IRRが上方に変わっています</td></tr>
+</tbody>
+</table></div>
+  </article>
+  <aside class="g-cta">
+    <p class="g-cta-title">自分の物件で、35年分を計算する</p>
+    <p>この記事と同じ計算を、あなたの物件の数字で。Freeプランは無料、クレジットカードの登録は不要です。</p>
+    <a class="btn btn-g" href="https://realsim-app.vercel.app">無料ではじめる</a>
+  </aside>
+</main>
+
+<footer>
+  <div class="wrap">
+    <div class="flogo"><svg viewBox="0 0 427.9 100" fill="none" role="img" aria-label="YOMU"><g transform="translate(0,0) scale(1.5625)">
+  <defs><clipPath id="yomuSun"><circle cx="32" cy="30" r="18"/></clipPath></defs>
+  <circle cx="32" cy="30" r="18" fill="#DBA53F"/>
+  <g clip-path="url(#yomuSun)" stroke="#F7F7F4" stroke-width="3.2">
+    <path d="M32 10v40M12 22h40M12 38h40"/>
+  </g>
+  <path d="M6 50L32 24 58 50" stroke="currentColor" stroke-width="5.6"
+        stroke-linecap="round" stroke-linejoin="round"/>
+</g><g transform="translate(126,13.276901004304158) scale(0.10329985652797705) translate(0,704) scale(1,-1)"><path fill="currentColor" transform="translate(0,0)" d="M590 695 360 252V0H246V252L15 695H142L303 354L464 695Z"/><path fill="currentColor" transform="translate(577,0)" d="M37 349Q37 451 84.5 532.0Q132 613 213.5 658.5Q295 704 392 704Q490 704 571.5 658.5Q653 613 700.0 532.0Q747 451 747 349Q747 247 700.0 165.5Q653 84 571.5 38.5Q490 -7 392 -7Q295 -7 213.5 38.5Q132 84 84.5 165.5Q37 247 37 349ZM630 349Q630 426 599.5 484.0Q569 542 515.0 573.0Q461 604 392 604Q323 604 269.0 573.0Q215 542 184.5 484.0Q154 426 154 349Q154 272 184.5 213.5Q215 155 269.0 123.5Q323 92 392 92Q461 92 515.0 123.5Q569 155 599.5 213.5Q630 272 630 349Z"/><path fill="currentColor" transform="translate(1351,0)" d="M807 695V0H693V476L481 0H402L189 476V0H75V695H198L442 150L685 695Z"/><path fill="currentColor" transform="translate(2233,0)" d="M188 695V252Q188 173 229.5 133.0Q271 93 345 93Q420 93 461.5 133.0Q503 173 503 252V695H617V254Q617 169 580.0 110.0Q543 51 481.0 22.0Q419 -7 344 -7Q269 -7 207.5 22.0Q146 51 110.0 110.0Q74 169 74 254V695Z"/></g></svg><span>不動産収支シミュレーター</span></div>
+    <div class="dis">本サービスが提供するシミュレーション・診断・AI調査結果はすべて参考情報であり、その正確性・完全性を保証するものではありません。本サービスは金融商品取引法上の投資助言・代理業、宅地建物取引業、税理士法上の税務相談に該当する行為を行うものではありません。不動産投資には元本割れを含むリスクがあり、最終的な投資判断はご自身の責任で行ってください。</div>
+    <div class="fl"><a href="/tokushoho.html">特定商取引法に基づく表記</a><a href="/privacy.html">プライバシーポリシー</a><a href="/terms.html">利用規約</a></div>
+    <div class="cr">© 2026 YOMU — 不動産収支シミュレーター / Yield・Occupancy・Mortgage・Upkeep</div>
+  </div>
+</footer>
+</body>
+</html>
+

@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{{title}} — YOMU</title>
+<meta name="description" content="{{description}}">
+<link rel="canonical" href="{{url}}">
+<meta property="og:title" content="{{title}}">
+<meta property="og:description" content="{{description}}">
+<meta property="og:type" content="article">
+<meta property="og:url" content="{{url}}">
+<meta property="og:site_name" content="YOMU">
+<meta name="twitter:card" content="summary">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+JP:wght@600;700&family=Zen+Kaku+Gothic+New:wght@400;500;700;900&family=Roboto+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16.png">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<meta name="theme-color" content="#12233F">
+<link rel="stylesheet" href="/guide/assets/guide.css">
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
+<defs>
+  <symbol id="i-alert" viewBox="0 0 24 24"><path d="M12 3.5L22 20H2z"/><path d="M12 10v4.5M12 17.2v.1"/></symbol>
+  <symbol id="i-arrow" viewBox="0 0 24 24"><path d="M5 12h14"/><polyline points="13 6 19 12 13 18"/></symbol>
+</defs>
+</svg>
+
+<header>
+  <div class="wrap nav">
+    <a class="brand" href="/" aria-label="YOMU"><svg viewBox="0 0 2923 711" fill="none" role="img" aria-label="YOMU">
+  <g transform="translate(0,704) scale(1,-1)">
+    <path fill="currentColor" transform="translate(0,0)" d="M590 695 360 252V0H246V252L15 695H142L303 354L464 695Z"/>
+    <path fill="#DBA53F" transform="translate(577,0)" d="M37 349Q37 451 84.5 532.0Q132 613 213.5 658.5Q295 704 392 704Q490 704 571.5 658.5Q653 613 700.0 532.0Q747 451 747 349Q747 247 700.0 165.5Q653 84 571.5 38.5Q490 -7 392 -7Q295 -7 213.5 38.5Q132 84 84.5 165.5Q37 247 37 349ZM630 349Q630 426 599.5 484.0Q569 542 515.0 573.0Q461 604 392 604Q323 604 269.0 573.0Q215 542 184.5 484.0Q154 426 154 349Q154 272 184.5 213.5Q215 155 269.0 123.5Q323 92 392 92Q461 92 515.0 123.5Q569 155 599.5 213.5Q630 272 630 349Z"/>
+    <path fill="currentColor" transform="translate(1351,0)" d="M807 695V0H693V476L481 0H402L189 476V0H75V695H198L442 150L685 695Z"/>
+    <path fill="currentColor" transform="translate(2233,0)" d="M188 695V252Q188 173 229.5 133.0Q271 93 345 93Q420 93 461.5 133.0Q503 173 503 252V695H617V254Q617 169 580.0 110.0Q543 51 481.0 22.0Q419 -7 344 -7Q269 -7 207.5 22.0Q146 51 110.0 110.0Q74 169 74 254V695Z"/>
+  </g>
+</svg></a>
+    <nav>
+      <a href="/#yomu">YOMUとは</a><a href="/#diag">30秒診断</a><a href="/#why">選ばれる理由</a>
+      <a href="/#features">機能</a><a href="/#engine">計算エンジン</a><a href="/#price">料金</a><a href="/#faq">FAQ</a>
+    </nav>
+    <a class="btn btn-p" href="https://realsim-app.vercel.app">無料ではじめる</a>
+  </div>
+</header>
+
+<main class="g-main">
+  <header class="g-head">
+    <p class="g-label">GUIDE</p>
+    <h1>{{title}}</h1>
+    <p class="g-meta">計算仕様 {{spec_version}} ／ 更新 {{updated}}</p>
+  </header>
+  <nav class="g-toc" aria-label="目次">
+    <p class="g-toc-title">目次</p>
+    {{toc}}
+  </nav>
+  <article class="g-body">
+{{content}}
+  </article>
+  <aside class="g-cta">
+    <p class="g-cta-title">自分の物件で、35年分を計算する</p>
+    <p>この記事と同じ計算を、あなたの物件の数字で。Freeプランは無料、クレジットカードの登録は不要です。</p>
+    <a class="btn btn-g" href="https://realsim-app.vercel.app">無料ではじめる</a>
+  </aside>
+</main>
+
+<footer>
+  <div class="wrap">
+    <div class="flogo"><svg viewBox="0 0 427.9 100" fill="none" role="img" aria-label="YOMU"><g transform="translate(0,0) scale(1.5625)">
+  <defs><clipPath id="yomuSun"><circle cx="32" cy="30" r="18"/></clipPath></defs>
+  <circle cx="32" cy="30" r="18" fill="#DBA53F"/>
+  <g clip-path="url(#yomuSun)" stroke="#F7F7F4" stroke-width="3.2">
+    <path d="M32 10v40M12 22h40M12 38h40"/>
+  </g>
+  <path d="M6 50L32 24 58 50" stroke="currentColor" stroke-width="5.6"
+        stroke-linecap="round" stroke-linejoin="round"/>
+</g><g transform="translate(126,13.276901004304158) scale(0.10329985652797705) translate(0,704) scale(1,-1)"><path fill="currentColor" transform="translate(0,0)" d="M590 695 360 252V0H246V252L15 695H142L303 354L464 695Z"/><path fill="currentColor" transform="translate(577,0)" d="M37 349Q37 451 84.5 532.0Q132 613 213.5 658.5Q295 704 392 704Q490 704 571.5 658.5Q653 613 700.0 532.0Q747 451 747 349Q747 247 700.0 165.5Q653 84 571.5 38.5Q490 -7 392 -7Q295 -7 213.5 38.5Q132 84 84.5 165.5Q37 247 37 349ZM630 349Q630 426 599.5 484.0Q569 542 515.0 573.0Q461 604 392 604Q323 604 269.0 573.0Q215 542 184.5 484.0Q154 426 154 349Q154 272 184.5 213.5Q215 155 269.0 123.5Q323 92 392 92Q461 92 515.0 123.5Q569 155 599.5 213.5Q630 272 630 349Z"/><path fill="currentColor" transform="translate(1351,0)" d="M807 695V0H693V476L481 0H402L189 476V0H75V695H198L442 150L685 695Z"/><path fill="currentColor" transform="translate(2233,0)" d="M188 695V252Q188 173 229.5 133.0Q271 93 345 93Q420 93 461.5 133.0Q503 173 503 252V695H617V254Q617 169 580.0 110.0Q543 51 481.0 22.0Q419 -7 344 -7Q269 -7 207.5 22.0Q146 51 110.0 110.0Q74 169 74 254V695Z"/></g></svg><span>不動産収支シミュレーター</span></div>
+    <div class="dis">本サービスが提供するシミュレーション・診断・AI調査結果はすべて参考情報であり、その正確性・完全性を保証するものではありません。本サービスは金融商品取引法上の投資助言・代理業、宅地建物取引業、税理士法上の税務相談に該当する行為を行うものではありません。不動産投資には元本割れを含むリスクがあり、最終的な投資判断はご自身の責任で行ってください。</div>
+    <div class="fl"><a href="/tokushoho.html">特定商取引法に基づく表記</a><a href="/privacy.html">プライバシーポリシー</a><a href="/terms.html">利用規約</a></div>
+    <div class="cr">© 2026 YOMU — 不動産収支シミュレーター / Yield・Occupancy・Mortgage・Upkeep</div>
+  </div>
+</footer>
+</body>
+</html>
+
