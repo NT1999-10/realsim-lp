@@ -5,7 +5,8 @@
 // 対応している記法（ガイド記事で使うものだけ）
 //   先頭の front matter（key: value）/ # 見出し（h1はtitleと一致を確認して本文から除く）
 //   ## / ### 見出しと末尾の {#id} / 段落 / **太字** / [文字](URL)
-//   | 表 |（2行目の ---: で右寄せ）/ ```formula 式ブロック / 1. 番号リスト / - 箇条書き
+//   | 表 |（2行目の ---: で右寄せ＝class="num"。全セルが14文字以下の列は class="nw"＝折り返さない）
+//   ```formula 式ブロック / 1. 番号リスト / - 箇条書き
 //   > 引用 / --- 区切り線 / <!-- widget: 名前 --> ウィジェット差し込み / その他の <!-- --> は削除
 
 import { readFileSync, writeFileSync, readdirSync, existsSync } from "node:fs";
@@ -110,7 +111,13 @@ function convert(md, name) {
       const rows = [];
       while (i < lines.length && lines[i].startsWith("|")) rows.push(lines[i++]);
       const head = splitRow(rows[0]);
-      const aligns = splitRow(rows[1]).map((c) => (/^:?-+:$/.test(c) && !/^:-+:$/.test(c) ? "num" : ""));
+      const plain = (c) => c.replace(/\*\*/g, "").replace(/\[([^\]]+)\]\([^\)\s]+\)/g, "$1");
+      const cellRows = [head, ...rows.slice(2).map(splitRow)];
+      const aligns = splitRow(rows[1]).map((c, j) => {
+        if (/^:?-+:$/.test(c) && !/^:-+:$/.test(c)) return "num";
+        const longest = Math.max(...cellRows.map((r) => [...plain(r[j] || "")].length));
+        return longest <= 14 ? "nw" : "";
+      });
       const cls = (j) => (aligns[j] ? ` class="${aligns[j]}"` : "");
       const thead = `<thead><tr>${head.map((c, j) => `<th${cls(j)}>${inline(c)}</th>`).join("")}</tr></thead>`;
       const tbody = rows.slice(2).map((r) =>

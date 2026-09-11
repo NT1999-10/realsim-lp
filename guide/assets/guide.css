@@ -139,12 +139,13 @@ th.num,td.num{text-align:right;font-family:var(--mono);font-variant-numeric:tabu
 .g-cta > p:not(.g-cta-title){font-size:15px;line-height:1.8;color:#D7E1EE;margin-bottom:18px}
 
 @media(min-width:1080px){
-  .g-main{max-width:1080px;display:grid;grid-template-columns:240px minmax(0,760px);column-gap:32px;align-items:start}
+  .g-main{max-width:1080px;display:grid;grid-template-columns:280px minmax(0,760px);column-gap:32px;align-items:start}
   .g-head{grid-column:1/-1}
   .g-toc{grid-column:1;grid-row:2;position:sticky;top:80px;margin-bottom:0}
   .g-body{grid-column:2;grid-row:2}
   .g-cta{grid-column:2;grid-row:3}
 }
+
 @media(max-width:640px){
   body{font-size:15.5px}
   .wrap{padding:0 18px}
@@ -158,3 +159,7 @@ th.num,td.num{text-align:right;font-family:var(--mono);font-variant-numeric:tabu
   .g-body{padding:20px}
   .g-cta{padding:22px 20px}
 }
+
+/* 表の短い列は折り返さない／日本語は文節で改行（Chrome・Edge） */
+th.nw,td.nw{white-space:nowrap}
+.g-head h1,.g-body h2,.g-body h3,.g-toc,.g-body th,.g-body td,.g-cta-title{word-break:auto-phrase}
