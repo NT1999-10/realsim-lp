@@ -536,7 +536,7 @@ footer .flogo span{font-size:12px;font-weight:700;color:#9FB2C9;letter-spacing:.
           <span class="chip">1.09</span>
         </div>
         <div class="jp">返済</div>
-        <p><em class="mk">変動金利は上がる前提で。</em>年次の上昇ペースと上限を置き、毎年、その年の金利で返済額を引き直します。</p>
+        <p><em class="mk">変動金利は上がる前提で。</em>年次の上昇ペースと上限を置き、毎年、その年の金利で返済額を引き直します。償却が切れて税が増える「デッドクロス」も判定します。</p>
         <ul><li>金利上昇シナリオ＋上限設定</li><li>初年度DSCR（返済余裕率）で判定</li><li>繰上返済シミュレーション</li></ul>
       </div>
       <div class="ycard">
@@ -621,7 +621,7 @@ footer .flogo span{font-size:12px;font-weight:700;color:#9FB2C9;letter-spacing:.
         <tr><td>退去・空室・AD</td><td><span class="x"><span class="ic"><svg><use href="#i-x"/></svg></span>満室想定</span></td><td><span class="v"><span class="ic"><svg><use href="#i-check"/></svg></span>平均入居期間 × 空室月数で退去を再現し、ADを計上</span></td></tr>
         <tr><td>原状回復費</td><td><span class="x"><span class="ic"><svg><use href="#i-x"/></svg></span>計上なし</span></td><td><span class="v"><span class="ic"><svg><use href="#i-check"/></svg></span>退去のたびに設定した金額を計上</span></td></tr>
         <tr><td>設備交換（給湯器・エアコン等）</td><td><span class="x"><span class="ic"><svg><use href="#i-x"/></svg></span>計上なし</span></td><td><span class="v"><span class="ic"><svg><use href="#i-check"/></svg></span>設備ごとの交換周期と費用を設定し、交換の年に計上</span></td></tr>
-        <tr><td>所得税・住民税／デッドクロス</td><td><span class="x"><span class="ic"><svg><use href="#i-x"/></svg></span>税引前しか出ない</span></td><td><span class="v"><span class="ic"><svg><use href="#i-check"/></svg></span>限界税率で税引後CF。償却が切れた年からの税負担増も反映</span></td></tr>
+        <tr><td>所得税・住民税／デッドクロス</td><td><span class="x"><span class="ic"><svg><use href="#i-x"/></svg></span>税引前しか出ない</span></td><td><span class="v"><span class="ic"><svg><use href="#i-check"/></svg></span>限界税率で税引後CF。償却が切れる年と増える税額を表示し、大きければ警告</span></td></tr>
         <tr><td>売却出口</td><td><span class="x"><span class="ic"><svg><use href="#i-x"/></svg></span>そもそも考えない</span></td><td><span class="v"><span class="ic"><svg><use href="#i-check"/></svg></span>3〜35年目の売却年を総当たりし、最適年を提示。IRRは売却込みで算出</span></td></tr>
       </tbody>
     </table>
