@@ -1,0 +1,64 @@
+    <div class="diag">
+      <div class="diag-in">
+        <div class="field"><label>物件価格 <b>PRICE</b></label><div class="box"><input id="i_price" type="number" value="2480" min="100" step="10"><span class="unit">万円</span></div></div>
+        <div class="field"><label>想定月額家賃 <b>RENT</b></label><div class="box"><input id="i_rent" type="number" value="92000" min="10000" step="1000"><span class="unit">円</span></div></div>
+        <div class="field"><label>自己資金・頭金 <b>EQUITY</b></label><div class="box"><input id="i_down" type="number" value="100" min="0" step="10"><span class="unit">万円</span></div></div>
+        <p class="note">初期値は、よくある新築ワンルーム提案の数字です。まずはそのまま触ってみてください。</p>
+        <div class="kv" style="grid-template-columns:1fr 1fr">
+          <div><span>実効家賃収入 /月</span><b id="b_inc" style="font-size:15px">—</b></div>
+          <div><span>運営費 /月</span><b id="b_ope" style="font-size:15px">—</b></div>
+          <div><span>借入額</span><b id="b_loan" style="font-size:15px">—</b></div>
+          <div><span>NOI /月</span><b id="b_noi" style="font-size:15px">—</b></div>
+        </div>
+        <p class="assump">前提：金利 1.8% / 35年元利均等 / 管理委託 5% / 建物管理費・修繕積立 月 12,000円 / 税・保険・小修繕 年 115,000円 / 稼働率 96%。フル版ではこれら <b>30以上</b> の前提をすべて自分で設定できます。</p>
+      </div>
+      <div class="diag-out">
+        <div class="signal" id="sig">
+          <div class="lamp"><i data-c="r" id="l_r"></i><i data-c="y" id="l_y"></i><i data-c="g" id="l_g"></i></div>
+          <div class="txt"><b id="s_title">判定中…</b><span id="s_desc">数値を入力すると即座に再計算します。</span></div>
+        </div>
+        <div class="res">
+          <div><span>月次CF</span><b id="r_cf">—</b></div>
+          <div><span>DSCR</span><b id="r_dscr">—</b></div>
+          <div><span>毎月の返済</span><b id="r_pay">—</b></div>
+          <div><span>表面利回り</span><b id="r_gross">—</b></div>
+          <div><span>実質利回り</span><b id="r_net">—</b></div>
+          <div><span>月CF×420ヶ月</span><b id="r_total">—</b></div>
+        </div>
+        <div class="alert" style="margin-top:14px">
+          <div class="ico-box red"><svg class="ico"><use href="#i-alert"/></svg></div>
+          <span class="tx">この診断は簡易版です。フル版では家賃下落・金利上昇・退去・設備交換・税・売却出口まで含めた <b>420ヶ月の推移</b>として計算します。</span>
+        </div>
+        <a class="btn btn-g" style="margin-top:14px" href="https://realsim-app.vercel.app">フル版で35年を計算する<svg class="ico" style="stroke-width:2"><use href="#i-arrow"/></svg></a>
+      </div>
+    </div>
+<script>
+(function(){
+  var P=document.getElementById('i_price'),R=document.getElementById('i_rent'),D=document.getElementById('i_down');
+  var $=function(id){return document.getElementById(id);};
+  var yen=function(n){return (n<0?'−':'')+Math.abs(Math.round(n)).toLocaleString('ja-JP');};
+  function calc(){
+    var price=(+P.value||0)*10000, rent=(+R.value||0), down=(+D.value||0)*10000;
+    var loan=Math.max(price-down,0), r=0.018/12, n=420;
+    var pay = loan>0 ? loan*r/(1-Math.pow(1+r,-n)) : 0;
+    var income=rent*0.96, opex=income*0.05+12000+115000/12, noi=income-opex, cf=noi-pay;
+    var dscr = pay>0 ? noi/pay : 99;
+    $('r_cf').textContent=yen(cf)+'円'; $('r_cf').className=cf>=0?'up':'dn';
+    $('r_dscr').textContent=dscr.toFixed(2); $('r_dscr').className=dscr>=1.2?'up':(dscr>=1?'':'dn');
+    $('r_pay').textContent=yen(pay)+'円';
+    $('r_gross').textContent=(price>0?(rent*12/price*100):0).toFixed(2)+'%';
+    $('r_net').textContent=(price>0?(noi*12/price*100):0).toFixed(2)+'%';
+    $('r_total').textContent=yen(cf*420/10000)+'万円'; $('r_total').className=cf>=0?'up':'dn';
+    $('b_inc').textContent=yen(income)+'円'; $('b_ope').textContent='−'+yen(opex)+'円';
+    $('b_loan').textContent=yen(loan/10000)+'万円'; $('b_noi').textContent=yen(noi)+'円';
+    var t,d,c;
+    if(cf>=0&&dscr>=1.2){c='g';t='青信号 — 保守的な前提でも黒字';d='この前提でも毎月手元に残り、返済余裕（DSCR）も確保できています。';}
+    else if(cf>=-15000&&dscr>=1.0){c='y';t='黄信号 — 余裕が薄い';d='黒字と赤字の境目です。金利が1%上がる、空室が1ヶ月延びるだけで反転します。';}
+    else{c='r';t='赤信号 — 毎月の持ち出しが発生';d='家賃収入が返済と経費を賄えていません。価格・頭金・家賃のいずれかを見直す必要があります。';}
+    ['r','y','g'].forEach(function(k){$('l_'+k).classList.toggle('on',k===c);});
+    $('sig').className='signal '+c; $('s_title').textContent=t; $('s_desc').textContent=d;
+  }
+  [P,R,D].forEach(function(e){e.addEventListener('input',calc);});
+  calc();
+})();
+</script>
