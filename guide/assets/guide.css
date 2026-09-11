@@ -145,7 +145,6 @@ th.num,td.num{text-align:right;font-family:var(--mono);font-variant-numeric:tabu
   .g-body{grid-column:2;grid-row:2}
   .g-cta{grid-column:2;grid-row:3}
 }
-
 @media(max-width:640px){
   body{font-size:15.5px}
   .wrap{padding:0 18px}
